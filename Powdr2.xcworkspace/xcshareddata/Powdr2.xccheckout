@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>3F8A2B4B-2B64-4B14-B608-0E3B0684791A</string>
+	<key>IDESourceControlProjectName</key>
+	<string>Powdr2</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>84B4F5E8DD7D4E29436DC89D1A7BEFF8798BC8ED</key>
+		<string>https://github.com/cnisb044/Powdr.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Powdr2.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>84B4F5E8DD7D4E29436DC89D1A7BEFF8798BC8ED</key>
+		<string>..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/cnisb044/Powdr.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>111</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>84B4F5E8DD7D4E29436DC89D1A7BEFF8798BC8ED</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>84B4F5E8DD7D4E29436DC89D1A7BEFF8798BC8ED</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Powdr2</string>
+		</dict>
+	</array>
+</dict>
+</plist>
