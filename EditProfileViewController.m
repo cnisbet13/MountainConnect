@@ -22,9 +22,6 @@
 
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *saveBarButtonItem;
 
-
-
-
 @end
 
 @implementation EditProfileViewController
@@ -32,12 +29,13 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    
     PFQuery *query = [PFQuery queryWithClassName:kCCPhotoUserKey];
     [query whereKey:kCCPhotoUserKey equalTo:[PFUser currentUser]];
     [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error) {
         if ([objects count]>0) {
             PFObject *photo = objects[0];
+            
+            
             PFFile *pictureFile = photo[kCCPhotoPictureKey];
             [pictureFile getDataInBackgroundWithBlock:^(NSData *data, NSError *error) {
                 self.profilePictureImageView.image = [UIImage imageWithData:data];
@@ -45,6 +43,7 @@
         }
     }];
     self.tagLineTextView.text = [[PFUser currentUser] objectForKey:kCCUserTagLineKey];
+
     
      
     // Do any additional setup after loading the view.
@@ -68,15 +67,27 @@
 #pragma mark - IBActions 
 
 
-- (IBAction)saveBarButtonItemPressed:(UIBarButtonItem *)sender {
+- (IBAction)saveBarButtonItemPressed:(UIBarButtonItem *)sender
+{
     
-    [[PFUser currentUser] setObject:self.tagLineTextView.text forKey:kCCUserTagLineKey];
-    [[PFUser currentUser] saveInBackground];
-    [self.navigationController popViewControllerAnimated:YES];
 }
 
 
 
+-(BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text
+{
+    if ([text isEqualToString:@"\n"]) {
+        
+        [self.tagLineTextView resignFirstResponder];
+        [[PFUser currentUser] setObject:self.tagLineTextView.text forKey:kCCUserTagLineKey];
+        [[PFUser currentUser] saveInBackground];
+        [self.navigationController popViewControllerAnimated:YES];
+        return NO;
+    }
+    else {
+        return YES;
+    }
+}
 
 
 

@@ -15,6 +15,7 @@
 #import "ProfileViewController.h"
 #import "SettingsViewController.h"
 #import "MatchViewController.h"
+#import "MatchesViewController.h"
 
 @interface ChatViewController ()
 
@@ -41,13 +42,16 @@
 
 
 - (void)viewDidLoad {
-    [super viewDidLoad];
-    // Do any additional setup after loading the view.
     
     self.delegate = self;
     self.dataSource = self;
     
-    [[JSBubbleView appearance] setFont:[UIFont systemFontOfSize:16.0f]];
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    
+    
+    
+    [[JSBubbleView appearance] setFont:[UIFont fontWithName:@"HelveticaNeue" size:17.0f]];
     self.messageInputView.textView.placeHolder = @"New Message";
     [self setBackgroundColor:[UIColor darkGrayColor]];
     
@@ -62,12 +66,23 @@
     self.title = self.withUser[@"profile"][@"firstName"];
     self.initialLoadComplete = NO;
     
+    [self checkForNewChats];
+    
+    self.chatsTimer = [NSTimer scheduledTimerWithTimeInterval:15 target:self selector:@selector(checkForNewChats) userInfo:nil repeats:YES];
+    
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+
+-(void)viewDidAppear:(BOOL)animated
+{
+    [self.chatsTimer invalidate];
+    self.chatsTimer = nil;
+}
+
 
 #pragma mark - Tableview Data Source Method
 
@@ -107,6 +122,97 @@
     else {
         return JSBubbleMessageTypeIncoming;
     }
+}
+
+-(UIImageView *)bubbleImageViewWithType:(JSBubbleMessageType)type forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    PFObject *chat = self.chats[indexPath.row];
+    PFUser *testFromUser = chat[@"fromUser"];
+    
+    if ([testFromUser.objectId isEqual:self.currentUser.objectId]) {
+        return [JSBubbleImageViewFactory bubbleImageViewForType:type color:[UIColor js_bubbleBlueColor]];
+    }
+    else {
+        return [JSBubbleImageViewFactory bubbleImageViewForType:type color:[UIColor js_bubbleLightGrayColor]];
+    }
+    
+}
+
+-(JSMessagesViewTimestampPolicy)timestampPolicy
+{
+    return JSMessagesViewTimestampPolicyAll;
+}
+
+//IMPLEMENT FOR AVATARS
+-(JSMessagesViewAvatarPolicy)avatarPolicy
+{
+    return JSMessagesViewAvatarPolicyNone;
+}
+
+-(JSMessagesViewSubtitlePolicy)subtitlePolicy
+{
+    return JSMessagesViewSubtitlePolicyNone;
+}
+
+-(JSMessageInputViewStyle)inputViewStyle
+{
+    return JSMessageInputViewStyleFlat;
+}
+
+-(void)configureCell:(JSBubbleMessageCell *)cell atIndexPath:(NSIndexPath *)indexPath
+{
+    
+    if ([cell messageType] == JSBubbleMessageTypeOutgoing) {
+        cell.bubbleView.textView.textColor = [UIColor whiteColor];
+    }
+}
+
+-(BOOL)shouldPreventScrollToBottomWhileUserScrolling
+{
+    return YES;
+}
+
+
+-(NSString *)textForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    PFObject *chat = self.chats[indexPath.row];
+    NSString *message = chat[@"text"];
+    return message;
+}
+
+-(NSDate *)timestampForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return nil;
+}
+
+-(UIImageView *)avatarImageViewForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return nil;
+}
+
+-(NSString *)subtitleForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return nil;
+}
+
+-(void)checkForNewChats
+{
+
+    int oldChatCount = [self.chats count];
+    
+    PFQuery *queryForChats = [PFQuery queryWithClassName:@"Chat"];
+    [queryForChats whereKey:@"chatroom" containedIn:self.chatRoom];
+    [queryForChats orderByAscending:@"createdAt"];
+    [queryForChats findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error) {
+        if (!error) {
+            if (self.initialLoadComplete == NO || oldChatCount != [objects count]) {
+                self.chats = [objects mutableCopy];
+                [self.tableView reloadData];
+                self.initialLoadComplete = YES;
+                [self scrollToBottomAnimated:YES];
+            }
+        }
+    }];
 }
 
 

@@ -16,7 +16,14 @@
 #import "SettingsViewController.h"
 #import "MatchViewController.h"
 
-@interface CCHomeViewController () <MatchViewControllerDelegate>
+@interface CCHomeViewController () <MatchViewControllerDelegate, ProfileViewControllerDelegate>
+
+
+@property (strong, nonatomic) IBOutlet UIView *buttonContainerView;
+
+@property (strong, nonatomic) IBOutlet UIView *labelContainerView;
+
+
 
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *chatBarButtonItem;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *settingsBarButtonItem;
@@ -24,7 +31,6 @@
 @property (strong, nonatomic) IBOutlet UILabel *firstNameLabel;
 @property (strong, nonatomic) IBOutlet UILabel *ageLabel;
 @property (strong, nonatomic) IBOutlet UILabel *locationLabel;
-@property (strong, nonatomic) IBOutlet UILabel *tagLineLabel;
 @property (strong, nonatomic) IBOutlet UIButton *dislikeButton;
 @property (strong, nonatomic) IBOutlet UIButton *infoButton;
 @property (strong, nonatomic) IBOutlet UIButton *likeButton;
@@ -46,7 +52,7 @@
     [super viewDidLoad];
     
     
-    [TestUser saveTestUserToParse];
+    //[TestUser saveTestUserToParse];
     
     self.likeButton.enabled = NO;
     self.dislikeButton.enabled = NO;
@@ -67,8 +73,27 @@
         }
     }];
     
-    //DO ADDITIONAL
+    [self setupViews];
+    
 }
+
+
+-(void)setupViews
+{
+    [self addShadowForView:self.buttonContainerView];
+    [self addShadowForView:self.labelContainerView];
+    self.photoImageView.layer.masksToBounds = YES;
+}
+
+-(void)addShadowForView:(UIView *)view
+{
+    view.layer.masksToBounds = NO;
+    view.layer.cornerRadius = 4;
+    view.layer.shadowRadius = 1;
+    view.layer.shadowOffset = CGSizeMake(0,1);
+    view.layer.shadowOpacity = 1.0;
+}
+
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
@@ -93,6 +118,7 @@
 
         ProfileViewController *profileVC = segue.destinationViewController;
         profileVC.photo = self.photo;
+        profileVC.delegate = self;
     }
     else if ([segue.identifier isEqualToString:@"homeToMatchSegue"]){
         MatchViewController *matchVC = segue.destinationViewController;
@@ -204,23 +230,50 @@
 {
     self.firstNameLabel.text = self.photo[kCCPhotoUserKey][kCCUserProfileKey][kCCUserProfileFirstNameKey];
     self.ageLabel.text = [NSString stringWithFormat:@"%@", self.photo[kCCPhotoUserKey][kCCUserProfileKey][kCCUserProfileAge]];
-    self.tagLineLabel.text = self.photo[kCCPhotoUserKey][kCCUserTagLineKey];
     self.locationLabel.text = self.photo[kCCPhotoUserKey][kCCUserProfileKey][kCCUserProfileLocationKey];
 }
 
--(void)setupNextPhoto{
-    
-    
+-(void)setupNextPhoto
+{
     if (self.currentPhotoIndex + 1 <self.photos.count)  {
         self.currentPhotoIndex ++;
+        if ([self allowPhoto]) {
+            [self setupNextPhoto];
+        }
         [self queryForCurrentPhotoIndex];
     } else {
-    
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"No More Users to View" message:@"Check Back Later" delegate:nil cancelButtonTitle:@"Ok" otherButtonTitles: nil];
         [alert show];
-        
     }
     
+}
+
+
+-(BOOL)allowPhoto
+{
+    int maxAge = [[NSUserDefaults standardUserDefaults] integerForKey:kCCAgeMaxKey];
+    BOOL men = [[NSUserDefaults standardUserDefaults] boolForKey:kCCMenEnabledKey];
+    BOOL women = [[NSUserDefaults standardUserDefaults] boolForKey:kCCWomenEnabledKey];
+    
+    PFObject *photo = self.photos[self.currentPhotoIndex];
+    PFUser *user = photo[kCCPhotoUserKey];
+    
+    int userAge = [user[kCCUserProfileKey][kCCUserProfileAge] intValue];
+    NSString *gender = user[kCCUserProfileKey][kCCUserProfileGenderKey];
+    
+    
+    if (userAge > maxAge) {
+        return NO;
+    }
+    else if (men == NO && [gender isEqualToString:@"male"]){
+    return NO;
+    }
+    else if (women == NO && [gender isEqualToString:@"female"]) {
+        return NO;
+    }
+    else {
+        return YES;
+    }
 }
 
 - (void)saveLike {
@@ -259,15 +312,12 @@
 
     if (self.isLikedByCurrentUser) {
         [self setupNextPhoto];
-        return;
+        [self saveLike];
     } else if (self.isDislikedByCurrentUser){
         for (PFObject *activity in self.activities) {
             [activity deleteInBackground];
         }
         [self.activities removeLastObject];
-        [self saveLike];
-    } else {
-        [self saveLike];
     }
 }
 
@@ -288,9 +338,11 @@
     } else {
         [self saveDislike];
     }
+    
+    
 }
 
-    -(void)checkForUserPhotoLikes
+-(void)checkForUserPhotoLikes
 {
     PFQuery *query = [PFQuery queryWithClassName:kCCActivityClassKey];
     [query whereKey:kCCActivityFromUserKey equalTo:self.photo[kCCPhotoUserKey]];
@@ -299,7 +351,8 @@
     [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error) {
         if ([objects count] > 0) {
             [self createChatRoom];
-            
+        }else{
+            NSLog(@"in else");
         }
     }];
 }
@@ -310,7 +363,7 @@
     [queryForChatRoom whereKey:@"user1" equalTo:[PFUser currentUser]];
     [queryForChatRoom whereKey:@"user2" equalTo:self.photo[kCCPhotoUserKey]];
     
-     PFQuery *queryForChatRoomInverse = [PFQuery queryWithClassName:@"ChatRoom"];
+    PFQuery *queryForChatRoomInverse = [PFQuery queryWithClassName:@"ChatRoom"];
     [queryForChatRoomInverse whereKey:@"user1" equalTo:self.photo[kCCPhotoUserKey]];
     [queryForChatRoomInverse whereKey:@"user2" equalTo:[PFUser currentUser]];
     
@@ -333,10 +386,24 @@
 -(void)presentMatchesViewController
 {
     [self dismissViewControllerAnimated:NO completion:^{
-        [self performSegueWithIdentifier:@"homeToMatchcesSegue" sender:nil];
+        [self performSegueWithIdentifier:@"homeToMatchesSegue" sender:nil];
     }];
 }
 
+
+#pragma mark - ProfileView Controller Delegate
+
+-(void)didPressLike
+{
+    [self.navigationController popViewControllerAnimated:NO];
+    [self checkLike];
+}
+
+-(void)didPressDisLike
+{
+    [self.navigationController popViewControllerAnimated:NO];
+    [self checkDislike];
+}
 
 
 

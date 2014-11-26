@@ -49,6 +49,10 @@ NSString *const kCCActivityPhotoKey             = @"photo";
 NSString *const kCCActivityTypeLikeKey          = @"like";
 NSString *const kCCActivityTypeDislikeKey       = @"dislike";
 
+#pragma mark - ChatRoom Class
+
+
+
 
 
 @end
